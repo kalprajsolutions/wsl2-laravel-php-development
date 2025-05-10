@@ -22,21 +22,6 @@ Spin up a complete Nginx + Redis + multi‑version PHP stack on **WSL2 Ubunt
 systemd=true
 ```
 
-### Quick install
-
-```bash
-# using curl
-curl -fsSL https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main/install.sh | bash
-
-# or, if curl isn’t available
-wget -qO- https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main/install.sh | bash
-```
-
-### Shut down WSL and restart:
-```bash 
-wsl --shutdown
-```
-
 ## 2 Install Nginx
 ```bash 
 sudo apt update
