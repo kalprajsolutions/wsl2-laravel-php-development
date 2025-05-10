@@ -4,7 +4,7 @@ set -euo pipefail
 
 phpinstall () {
     local ver=$1
-    sudo apt install php${ver} php${ver}-{bcmath,bz2,cgi,cli,common,curl,dba,dev,enchant,fpm,gd,gmp,imap,interbase,intl,ldap,mbstring,mysql,odbc,opcache,pgsql,phpdbg,pspell,readline,snmp,soap,sqlite3,sybase,tidy,xml,xsl,zip} -y
+    sudo apt install php${ver} php${ver}-{bcmath,bz2,redis,cgi,cli,common,curl,dba,dev,enchant,fpm,gd,gmp,imap,interbase,intl,ldap,mbstring,mysql,odbc,opcache,pgsql,phpdbg,pspell,readline,snmp,soap,sqlite3,sybase,tidy,xml,xsl,zip} -y
     sudo systemctl enable --now php${ver}-fpm
     echo "PHP installed to ${ver}"
 }
