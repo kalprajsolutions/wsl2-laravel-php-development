@@ -29,6 +29,12 @@ phpinstall () {
     sudo sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" $fpm_ini
     sudo sed -i "s/post_max_size = .*/post_max_size = 100M/" $fpm_ini
     sudo sed -i "s@;date.timezone =.*@date.timezone = UTC@" $fpm_ini
+    
+    # CA‑bundle section (idempotent) 
+    printf "[openssl]\n" | tee -a /etc/php/$ver/fpm/php.ini
+    printf "openssl.cainfo = /etc/ssl/certs/ca-certificates.crt\n" | tee -a /etc/php/$ver/fpm/php.ini
+    printf "[curl]\n" | tee -a /etc/php/$ver/fpm/php.ini
+    printf "curl.cainfo = /etc/ssl/certs/ca-certificates.crt\n" | tee -a /etc/php/$ver/fpm/php.ini
 
     # Configure Xdebug (if installed)
     xdebug_ini="/etc/php/${ver}/mods-available/xdebug.ini"
