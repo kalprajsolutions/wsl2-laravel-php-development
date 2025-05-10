@@ -18,6 +18,21 @@ phpswitch () {
     echo "PHP switched to ${ver}"
 }
 
+###  Tear‑down a dev v‑host  ###
+unserve () {
+  # default to "<folder>.test" if no arg
+  local domain="${1:-$(basename "$PWD").test}"
+
+  # 1. Remove Nginx files (both the live symlink and the source)
+  sudo rm -f /etc/nginx/sites-enabled/$domain
+  sudo rm -f /etc/nginx/sites-available/$domain
+
+  # 2. Reload Nginx gracefully
+  sudo nginx -s reload
+  
+  echo "🗑️  Removed $domain"
+}
+
 ###  On‑the‑fly Nginx site creator  ###
 serve () {
   # domain defaults to "<folder>.test"
