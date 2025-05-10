@@ -28,7 +28,7 @@ serve () {
   sudo tee /etc/nginx/sites-available/$domain >/dev/null <<EOF
 server {
     listen 80;
-    server_name $domain;
+    server_name .$domain;
     root $root;
 
     index index.php index.html;
