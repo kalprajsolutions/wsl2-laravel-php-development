@@ -50,6 +50,7 @@ The toolkit gives you two commands:
 
 * `phpinstall <version>` – installs PHP x.y with a full extension set
 * `phpswitch <version>`  – flips CLI + FPM + Nginx socket to that version
+* `serve <domain>`       - starts nginx config with foldername as `domain.test`
 
 Run the one‑liner (no `sudo`—the script uses it internally where needed):
 
