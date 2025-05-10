@@ -1,24 +1,34 @@
 #!/usr/bin/env bash
-# shellcheck shell=bash
+# Install the PHP helper toolkit into the current user’s HOME.
+# Works whether run from a clone *or* piped via curl|sh.
+
 set -euo pipefail
 
-PKG_DIR="${HOME}/.local/lib/php-toolkit"
-RC_FILE="${HOME}/.bashrc"          # change to ~/.zshrc for Z‑shell users
+### Configuration #############################################################
+PKG_DIR="${HOME}/.local/lib/wsl2-php-toolkit"         # where helpers live
+RC_FILE="${HOME}/.bashrc"                             # change to ~/.zshrc if needed
+RAW_BASE="https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main"
 SOURCE_LINE="source \"${PKG_DIR}/functions.sh\""
+###############################################################################
 
-echo "▶ Installing PHP‑toolkit into ${PKG_DIR}"
-
-# 1. create target dir, copy scripts there
+echo "▶ Installing toolkit into ${PKG_DIR}"
 mkdir -p "${PKG_DIR}"
-cp "$(dirname "$0")/functions.sh" "${PKG_DIR}/functions.sh"
 
-# 2. add 'source' line to rc‑file (only if absent)
-if ! grep -Fxq "${SOURCE_LINE}" "${RC_FILE}"; then
-    echo "${SOURCE_LINE}" >> "${RC_FILE}"
-    echo "✓ Added toolkit source line to ${RC_FILE}"
+echo "⬇  Downloading functions.sh …"
+if command -v curl >/dev/null 2>&1; then
+  curl -fsSL "${RAW_BASE}/functions.sh" -o "${PKG_DIR}/functions.sh"
 else
-    echo "✓ ${RC_FILE} already sources the toolkit"
+  wget -qO "${PKG_DIR}/functions.sh" "${RAW_BASE}/functions.sh"
+fi
+chmod 644 "${PKG_DIR}/functions.sh"
+
+# Ensure functions are sourced in every new shell (idempotent)
+if ! grep -Fxq "${SOURCE_LINE}" "${RC_FILE}"; then
+  echo "${SOURCE_LINE}" >> "${RC_FILE}"
+  echo "✓ Added toolkit source line to ${RC_FILE}"
+else
+  echo "✓ ${RC_FILE} already sources the toolkit"
 fi
 
-echo "✓ Installation complete.  Restart your shell or run:"
+echo "✓ Installation complete — restart your shell or run:"
 echo "   source ${RC_FILE}"
