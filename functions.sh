@@ -93,7 +93,7 @@ server {
     index index.php index.html;
 
     client_max_body_size 100M;
-
+   
     # No caching for development
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|pdf|txt|tar|woff|woff2|ttf|svg|eot|otf|mp4|webm|ogg)$ {
         expires off;
@@ -112,6 +112,10 @@ server {
 
     # Optional headers for local dev
     add_header X-Dev-Environment "Laravel Dev Server";
+
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
 }
 EOF
 
