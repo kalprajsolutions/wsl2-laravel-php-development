@@ -1,6 +1,5 @@
 # php‑toolkit/functions.sh
 # shellcheck shell=bash
-set -euo pipefail
 
 phpinstall () {
     local ver=$1
