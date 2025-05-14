@@ -102,10 +102,6 @@ server {
     add_header X-Dev-Environment "KSPL Dev Server";
 
     client_max_body_size 100M;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
     
     # No caching for development
     location ~* \.(jpg|jpeg|png|gif|ico|css|pdf|txt|tar|woff|woff2|ttf|svg|eot|otf|mp4|webm|ogg)$ {
@@ -122,6 +118,10 @@ server {
 
     # Gzip (optional for local dev)
     gzip off;
+
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
 }
 EOF
 
