@@ -104,7 +104,7 @@ server {
     client_max_body_size 100M;
 
     location / {
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files \$uri \$uri/ /index.php?\$query_string;
     }
     
     # No caching for development
