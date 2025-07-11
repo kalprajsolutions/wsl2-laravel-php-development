@@ -144,6 +144,14 @@ server {
 }
 EOF
 
+  # 2) ensure www-data can traverse parent dirs
+  local p="$PWD"
+  while [[ "$p" != "/" ]]; do
+    sudo chmod g+rx "$p"
+    p=$(dirname "$p")
+  done
+  sudo usermod -aG www-data $USER  # one‑time only
+
   # Fix ownership & permissions
   local me; me=$(id -un)
   sudo chown -R "${me}:www-data" "$PWD"
