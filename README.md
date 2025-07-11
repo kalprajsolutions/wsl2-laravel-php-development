@@ -102,3 +102,8 @@ Verify:
 php -v
 curl -s http://localhost | grep "PHP Version"
 ```
+
+If nginx gives 404 cause of permissions issues run below comamnd and restart
+```bash
+sudo usermod -a -G $USER www-data
+```
