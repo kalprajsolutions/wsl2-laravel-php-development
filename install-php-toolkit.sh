@@ -96,24 +96,60 @@ if ! command -v php >/dev/null 2>&1; then
     exit 1
 fi
 
-echo -e "${GREEN}📥 Downloading Composer installer...${NC}"
-EXPECTED_SIGNATURE=$(wget -q -O - https://composer.github.io/installer.sig)
+echo -e "${GREEN}Installing Laravel Installer...${NC}"
 
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
+# Step 1: Ensure Composer is installed
+if ! command -v composer &> /dev/null; then
+    echo "Composer is not installed. Installing Composer..."
+    EXPECTED_SIGNATURE=$(wget -q -O - https://composer.github.io/installer.sig)
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
 
-if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then
-    echo "❌ ERROR: Invalid installer signature."
+    if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then
+        >&2 echo 'ERROR: Invalid Composer installer signature'
+        rm composer-setup.php
+        exit 1
+    fi
+
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     rm composer-setup.php
-    exit 1
+else
+    echo "Composer already installed."
 fi
 
-echo -e "${GREEN}🔧 Installing Composer...${NC}"
-php composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
-rm composer-setup.php
+# Step 2: Install Laravel installer globally
+composer global require laravel/installer
 
-echo -e "${GREEN}✅ Composer installed successfully!${NC}"
-composer --version
+# Step 3: Add Composer global bin to PATH
+COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
+
+if [[ ":$PATH:" != *":$COMPOSER_BIN_DIR:"* ]]; then
+    echo -e "${GREEN}Adding Composer bin dir to PATH...${NC}"
+
+    SHELL_RC=""
+    if [ -n "$ZSH_VERSION" ]; then
+        SHELL_RC="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ]; then
+        SHELL_RC="$HOME/.bashrc"
+    else
+        SHELL_RC="$HOME/.profile"
+    fi
+
+    echo "export PATH=\"$COMPOSER_BIN_DIR:\$PATH\"" >> "$SHELL_RC"
+    export PATH="$COMPOSER_BIN_DIR:$PATH"
+    echo "Updated PATH in $SHELL_RC"
+else
+    echo "Composer bin dir already in PATH."
+fi
+
+# Step 4: Verify Laravel is installed
+if command -v laravel &> /dev/null; then
+    echo -e "${GREEN}Laravel installer installed successfully!${NC}"
+    laravel --version
+else
+    echo -e "${RED}Laravel command not found. Check PATH settings manually.${NC}"
+    exit 1
+fi
 
 ### 5. Done
 echo
