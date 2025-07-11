@@ -86,6 +86,35 @@ else
   echo "✓ ${RC_FILE} already sources the toolkit"
 fi
 
+# Colors for output
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}🔍 Checking PHP installation...${NC}"
+if ! command -v php >/dev/null 2>&1; then
+    echo "❌ PHP is not installed. Please install PHP first."
+    exit 1
+fi
+
+echo -e "${GREEN}📥 Downloading Composer installer...${NC}"
+EXPECTED_SIGNATURE=$(wget -q -O - https://composer.github.io/installer.sig)
+
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
+
+if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then
+    echo "❌ ERROR: Invalid installer signature."
+    rm composer-setup.php
+    exit 1
+fi
+
+echo -e "${GREEN}🔧 Installing Composer...${NC}"
+php composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
+rm composer-setup.php
+
+echo -e "${GREEN}✅ Composer installed successfully!${NC}"
+composer --version
+
 ### 5. Done
 echo
 echo "✓ Installation complete."
