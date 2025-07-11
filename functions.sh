@@ -65,9 +65,16 @@ EOL"
         sudo bash -c "grep -q 'opcache.revalidate_freq' $opcache_ini || echo 'opcache.revalidate_freq = 0' >> $opcache_ini"
     fi
 
+    # Ensure PHP‑FPM pool runs as the current user
+    local pool_conf="/etc/php/${ver}/fpm/pool.d/www.conf"
+    local current_user; current_user=$(id -un)
+    local current_group; current_group=$(id -gn)
+    sudo sed -i "s/^user = .*/user = $current_user/" "$pool_conf"
+    sudo sed -i "s/^group = .*/group = $current_group/" "$pool_conf"
+
     # Restart FPM
     sudo $SVC restart php${ver}-fpm || true
-    echo "PHP ${ver} CLI and FPM configured for development."
+    echo "PHP ${ver} CLI and FPM configured for development under $current_user:$current_group."
 }
 
 phpswitch() {
@@ -113,7 +120,7 @@ serve() {
 server {
     listen 80;
     server_name .$domain;
-    root $root;
+    root "$root";
 
     index index.php index.html;
     client_max_body_size 100M;
