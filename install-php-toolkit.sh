@@ -101,9 +101,17 @@ function install_composer() {
             exit 1
         fi
 
-        php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+        COMPOSER_INSTALL_PATH="$HOME/.local/bin"
+        mkdir -p "$COMPOSER_INSTALL_PATH"
+        php composer-setup.php --install-dir="$COMPOSER_INSTALL_PATH" --filename=composer
         rm composer-setup.php
-        echo "Composer installed."
+
+        echo "Composer installed at $COMPOSER_INSTALL_PATH/composer"
+        export PATH="$COMPOSER_INSTALL_PATH:$PATH"
+
+        if ! grep -q "$COMPOSER_INSTALL_PATH" "$RC_FILE"; then
+            echo "export PATH=\"$COMPOSER_INSTALL_PATH:\$PATH\"" >> "$RC_FILE"
+        fi
     else
         echo "Composer already installed."
     fi
