@@ -110,6 +110,42 @@ unserve() {
 
 }
 
+fix_laravel_permissions() {
+  local dir="${1:-$PWD}"
+  local user="${SUDO_USER:-$USER}"
+
+  echo "🔧 Fixing Laravel permissions in: $dir"
+
+  # Ensure group access for www-data
+  sudo usermod -aG www-data "$user"
+  sudo chown -R "$user":www-data "$dir"
+
+  # Set correct directory permissions (2755 or 2775 with setgid)
+  sudo find "$dir" -type d -exec chmod 2775 {} \;
+
+  # Set correct file permissions
+  sudo find "$dir" -type f -exec chmod 664 {} \;
+
+  # Laravel-specific: make sure storage and cache dirs are writable
+  for target in "$dir/storage" "$dir/bootstrap/cache"; do
+    if [[ -d "$target" ]]; then
+      echo "⚙️  Setting write permissions on $target"
+      sudo chown -R "$user":www-data "$target"
+      sudo chmod -R ug+rwX "$target"
+      sudo find "$target" -type d -exec chmod g+s {} \;
+    fi
+  done
+
+  # Ensure Nginx can traverse the full path (execute permissions)
+  local path="$dir"
+  while [[ "$path" != "/" ]]; do
+    sudo chmod o+x "$path"
+    path=$(dirname "$path")
+  done
+
+  echo "✅ Permissions fixed for Laravel project in $dir"
+}
+
 ### On‑the‑fly Nginx site creator
 serve() {
   local domain="${1:-$(basename "$PWD").test}"
@@ -144,31 +180,7 @@ server {
 }
 EOF
 
-  # 2) ensure www-data can traverse parent dirs
-  local p="$PWD"
-  while [[ "$p" != "/" ]]; do
-    sudo chmod g+rx "$p"
-    p=$(dirname "$p")
-  done
-  sudo usermod -aG www-data $USER  # one‑time only
-
-  # Fix ownership & permissions
-  local me; me=$(id -un)
-  sudo chown -R "${me}:www-data" "$PWD"
-
-  # directories: 775 (rwx for user+group, rx for others if you like)
-  sudo find "$PWD" -type d -exec chmod 2775 {} \;
-
-  # files: 664 (rw for user+group, r for others)
-  sudo find "$PWD" -type f -exec chmod 664 {} \;
-
-  # Laravel-specific writable directories
-  if [[ -d "$PWD/storage" ]]; then
-    sudo chmod -R ug+rwx "$PWD/storage"
-  fi
-  if [[ -d "$PWD/bootstrap/cache" ]]; then
-    sudo chmod -R ug+rwx "$PWD/bootstrap/cache"
-  fi
+  fix_laravel_permissions
 
   # now enable & reload
   sudo ln -sf /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/$domain
