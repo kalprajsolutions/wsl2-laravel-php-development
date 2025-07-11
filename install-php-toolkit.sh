@@ -1,158 +1,153 @@
 #!/usr/bin/env bash
-# install-php-toolkit.sh
-# Ubuntu/WSL (20.04+) PHP helper toolkit installer
-
+# Refactored PHP Toolkit Installer
 set -euo pipefail
 shopt -s expand_aliases
 
-### Helper: run apt commands with sudo if needed
-if (( EUID != 0 )); then
-  SUDO='sudo'
-else
-  SUDO=''
-fi
+# Use sudo if not root
+SUDO=""
+(( EUID != 0 )) && SUDO="sudo"
 
-### 1. Detect OS, release, and WSL
-# Load /etc/os-release if present
-if [[ -f /etc/os-release ]]; then
-  . /etc/os-release
-  DISTRO_ID=${ID,,}
-  DISTRO_VER=${VERSION_ID%%.*}
-else
-  DISTRO_ID="unknown"
-  DISTRO_VER=0
-fi
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-# Check for WSL
-if grep -qi microsoft /proc/version 2>/dev/null; then
-  IS_WSL=true
-else
-  IS_WSL=false
-fi
-
-# Only Ubuntu 20.04+ (including WSL Ubuntu) is supported for the PPA approach
-if [[ "$DISTRO_ID" == "ubuntu" && "$DISTRO_VER" -ge 20 ]]; then
-  echo "Detected Ubuntu ${VERSION_ID}${IS_WSL:+ on WSL}, OK to add Ondřej Surý’s PPA."
-  DO_PPA=true
-else
-  echo "Warning: Detected ${PRETTY_NAME:-$DISTRO_ID $VERSION_ID}, PPA step will be skipped."
-  DO_PPA=false
-fi
-
-### 2. Install prerequisites and add the PPA (if supported)
-echo
-echo "▶ Installing prerequisites…"
-$SUDO apt update
-DEBIAN_FRONTEND=noninteractive $SUDO apt install -y \
-    software-properties-common \
-    ca-certificates \
-    lsb-release \
-    apt-transport-https \
-    curl \
-    wget
-
-if $DO_PPA; then
-  echo "▶ Adding Ondřej Surý’s PPA…"
-  $SUDO add-apt-repository -y ppa:ondrej/php
-  $SUDO apt update
-fi
-
-### 3. Configuration
-PKG_DIR="${HOME}/.local/lib/php-toolkit"
-# auto‑detect your login shell RC file
+# Global Variables
+PKG_DIR="$HOME/.local/lib/php-toolkit"
 RC_FILE="$HOME/$([[ "${SHELL##*/}" == "zsh" ]] && echo .zshrc || echo .bashrc)"
 RAW_BASE="https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main"
 SOURCE_LINE="source \"${PKG_DIR}/functions.sh\""
 
-echo
-echo "▶ Installing toolkit into ${PKG_DIR}"
-mkdir -p "${PKG_DIR}"
+function detect_os() {
+    if [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        DISTRO_ID=${ID,,}
+        DISTRO_VER=${VERSION_ID%%.*}
+    else
+        DISTRO_ID="unknown"
+        DISTRO_VER=0
+    fi
 
-echo "▶ Downloading functions.sh…"
-if command -v curl >/dev/null 2>&1; then
-  curl -fsSL "${RAW_BASE}/functions.sh" -o "${PKG_DIR}/functions.sh"
-else
-  wget -qO "${PKG_DIR}/functions.sh" "${RAW_BASE}/functions.sh"
-fi
-chmod 644 "${PKG_DIR}/functions.sh"
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+        IS_WSL=true
+    else
+        IS_WSL=false
+    fi
 
-### 4. Ensure your RC file sources it
-if ! grep -Fxq "${SOURCE_LINE}" "${RC_FILE}"; then
-  echo >> "${RC_FILE}"
-  echo "# PHP toolkit helpers" >> "${RC_FILE}"
-  echo "${SOURCE_LINE}" >> "${RC_FILE}"
-  echo "✓ Added source line to ${RC_FILE}"
-else
-  echo "✓ ${RC_FILE} already sources the toolkit"
-fi
+    if [[ "$DISTRO_ID" == "ubuntu" && "$DISTRO_VER" -ge 20 ]]; then
+        echo "Detected Ubuntu ${VERSION_ID}${IS_WSL:+ on WSL}, OK to add Ondrej Sury's PPA."
+        DO_PPA=true
+    else
+        echo "Warning: Unsupported OS. Skipping PPA setup."
+        DO_PPA=false
+    fi
+}
 
-# Colors for output
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
+function install_prerequisites() {
+    echo -e "\n▶ Installing prerequisites…"
+    $SUDO apt update
+    DEBIAN_FRONTEND=noninteractive $SUDO apt install -y \
+        software-properties-common \
+        ca-certificates \
+        lsb-release \
+        apt-transport-https \
+        curl \
+        wget
 
-echo -e "${GREEN}🔍 Checking PHP installation...${NC}"
-if ! command -v php >/dev/null 2>&1; then
-    echo "❌ PHP is not installed. Please install PHP first."
-    exit 1
-fi
+    if $DO_PPA; then
+        echo "▶ Adding Ondrej Sury’s PPA…"
+        $SUDO add-apt-repository -y ppa:ondrej/php
+        $SUDO apt update
+    fi
+}
 
-echo -e "${GREEN}Installing Laravel Installer...${NC}"
+function install_toolkit() {
+    echo -e "\n▶ Installing toolkit into ${PKG_DIR}"
+    mkdir -p "$PKG_DIR"
 
-# Step 1: Ensure Composer is installed
-if ! command -v composer &> /dev/null; then
-    echo "Composer is not installed. Installing Composer..."
-    EXPECTED_SIGNATURE=$(wget -q -O - https://composer.github.io/installer.sig)
-    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
+    echo "▶ Downloading functions.sh…"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$RAW_BASE/functions.sh" -o "$PKG_DIR/functions.sh"
+    else
+        wget -qO "$PKG_DIR/functions.sh" "$RAW_BASE/functions.sh"
+    fi
+    chmod 644 "$PKG_DIR/functions.sh"
+}
 
-    if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then
-        >&2 echo 'ERROR: Invalid Composer installer signature'
+function configure_shell_rc() {
+    if ! grep -Fxq "$SOURCE_LINE" "$RC_FILE"; then
+        echo -e "\n# PHP toolkit helpers" >> "$RC_FILE"
+        echo "$SOURCE_LINE" >> "$RC_FILE"
+        echo "✓ Added source line to $RC_FILE"
+    else
+        echo "✓ $RC_FILE already sources the toolkit"
+    fi
+}
+
+function install_composer() {
+    if ! command -v composer &> /dev/null; then
+        echo "Composer not found. Installing..."
+        EXPECTED_SIG=$(wget -q -O - https://composer.github.io/installer.sig)
+        php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+        ACTUAL_SIG=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
+
+        if [[ "$EXPECTED_SIG" != "$ACTUAL_SIG" ]]; then
+            echo -e "${RED}ERROR: Invalid Composer installer signature${NC}"
+            rm composer-setup.php
+            exit 1
+        fi
+
+        php composer-setup.php --install-dir=/usr/local/bin --filename=composer
         rm composer-setup.php
+        echo "Composer installed."
+    else
+        echo "Composer already installed."
+    fi
+}
+
+function install_laravel_installer() {
+    echo -e "${GREEN}Installing Laravel Installer...${NC}"
+    composer global require laravel/installer
+
+    COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
+    if [[ ":$PATH:" != *":$COMPOSER_BIN_DIR:"* ]]; then
+        echo -e "${GREEN}Adding Composer bin dir to PATH...${NC}"
+        echo "export PATH=\"$COMPOSER_BIN_DIR:\$PATH\"" >> "$RC_FILE"
+        export PATH="$COMPOSER_BIN_DIR:$PATH"
+        echo "Updated PATH in $RC_FILE"
+    else
+        echo "Composer bin dir already in PATH."
+    fi
+
+    if command -v laravel &> /dev/null; then
+        echo -e "${GREEN}Laravel installer installed successfully!${NC}"
+        laravel --version
+    else
+        echo -e "${RED}Laravel command not found. Check PATH settings manually.${NC}"
         exit 1
     fi
+}
 
-    php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-    rm composer-setup.php
-else
-    echo "Composer already installed."
-fi
-
-# Step 2: Install Laravel installer globally
-composer global require laravel/installer
-
-# Step 3: Add Composer global bin to PATH
-COMPOSER_BIN_DIR="$(composer global config bin-dir --absolute)"
-
-if [[ ":$PATH:" != *":$COMPOSER_BIN_DIR:"* ]]; then
-    echo -e "${GREEN}Adding Composer bin dir to PATH...${NC}"
-
-    SHELL_RC=""
-    if [ -n "$ZSH_VERSION" ]; then
-        SHELL_RC="$HOME/.zshrc"
-    elif [ -n "$BASH_VERSION" ]; then
-        SHELL_RC="$HOME/.bashrc"
-    else
-        SHELL_RC="$HOME/.profile"
+function validate_php_installed() {
+    echo -e "${GREEN}🔍 Checking PHP installation...${NC}"
+    if ! command -v php >/dev/null 2>&1; then
+        echo -e "${RED}❌ PHP is not installed. Please install PHP first.${NC}"
+        exit 1
     fi
+}
 
-    echo "export PATH=\"$COMPOSER_BIN_DIR:\$PATH\"" >> "$SHELL_RC"
-    export PATH="$COMPOSER_BIN_DIR:$PATH"
-    echo "Updated PATH in $SHELL_RC"
-else
-    echo "Composer bin dir already in PATH."
-fi
+function main() {
+    detect_os
+    install_prerequisites
+    install_toolkit
+    configure_shell_rc
+    validate_php_installed
+    install_composer
+    install_laravel_installer
 
-# Step 4: Verify Laravel is installed
-if command -v laravel &> /dev/null; then
-    echo -e "${GREEN}Laravel installer installed successfully!${NC}"
-    laravel --version
-else
-    echo -e "${RED}Laravel command not found. Check PATH settings manually.${NC}"
-    exit 1
-fi
+    echo -e "\n✓ Installation complete."
+    echo "  ➜ Restart your shell or run:  source ${RC_FILE}"
+    echo "  ➜ Then, try:  php-toolkit --help"
+}
 
-### 5. Done
-echo
-echo "✓ Installation complete."
-echo "  ➜ Restart your shell or run:  source ${RC_FILE}"
-echo "  ➜ Then, try:  php-toolkit --help"
+main "$@"
