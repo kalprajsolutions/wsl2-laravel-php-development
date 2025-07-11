@@ -66,11 +66,11 @@ EOL"
     fi
 
     # Ensure PHP‑FPM pool runs as the current user
-    local pool_conf="/etc/php/${ver}/fpm/pool.d/www.conf"
-    local current_user; current_user=$(id -un)
-    local current_group; current_group=$(id -gn)
-    sudo sed -i "s/^user = .*/user = $current_user/" "$pool_conf"
-    sudo sed -i "s/^group = .*/group = $current_group/" "$pool_conf"
+    # local pool_conf="/etc/php/${ver}/fpm/pool.d/www.conf"
+    # local current_user; current_user=$(id -un)
+    # local current_group; current_group=$(id -gn)
+    # sudo sed -i "s/^user = .*/user = $current_user/" "$pool_conf"
+    # sudo sed -i "s/^group = .*/group = $current_group/" "$pool_conf"
 
     # Restart FPM
     sudo $SVC restart php${ver}-fpm || true
@@ -143,6 +143,8 @@ server {
     }
 }
 EOF
+
+  sudo chown -R www-data:www-data $root
 
   sudo ln -sf /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/$domain
   sudo nginx -s reload || true
