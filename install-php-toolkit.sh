@@ -72,6 +72,10 @@ function install_toolkit() {
         wget -qO "$PKG_DIR/functions.sh" "$RAW_BASE/functions.sh"
     fi
     chmod 644 "$PKG_DIR/functions.sh"
+
+    # Source the downloaded file so we can use its functions
+    # shellcheck source=/dev/null
+    source "$PKG_DIR/functions.sh"
 }
 
 function configure_shell_rc() {
@@ -131,8 +135,15 @@ function install_laravel_installer() {
 function validate_php_installed() {
     echo -e "${GREEN}🔍 Checking PHP installation...${NC}"
     if ! command -v php >/dev/null 2>&1; then
-        echo -e "${RED}❌ PHP is not installed. Please install PHP first.${NC}"
-        exit 1
+        echo -e "${RED}❌ PHP is not installed. Installing PHP 8.3 using toolkit...${NC}"
+        if declare -f phpinstall >/dev/null; then
+            phpinstall 8.3
+        else
+            echo -e "${RED}Error: phpinstall function not found in toolkit.${NC}"
+            exit 1
+        fi
+    else
+        echo "PHP is installed."
     fi
 }
 
