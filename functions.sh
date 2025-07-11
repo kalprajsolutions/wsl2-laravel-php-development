@@ -144,20 +144,34 @@ server {
 }
 EOF
 
-  sudo chown -R www-data:www-data $root
+  # Fix ownership & permissions
+  local me; me=$(id -un)
+  sudo chown -R "${me}:www-data" "$PWD"
 
+  # directories: 775 (rwx for user+group, rx for others if you like)
+  sudo find "$PWD" -type d -exec chmod 2775 {} \;
+
+  # files: 664 (rw for user+group, r for others)
+  sudo find "$PWD" -type f -exec chmod 664 {} \;
+
+  # Laravel-specific writable directories
+  if [[ -d "$PWD/storage" ]]; then
+    sudo chmod -R ug+rwx "$PWD/storage"
+  fi
+  if [[ -d "$PWD/bootstrap/cache" ]]; then
+    sudo chmod -R ug+rwx "$PWD/bootstrap/cache"
+  fi
+
+  # now enable & reload
   sudo ln -sf /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/$domain
   sudo nginx -s reload || true
   echo "🌐 http://$domain ⇢ $root"
 
-    # Add domain to /etc/hosts
+  # add to hosts if needed
   if ! grep -q "127.0.0.1\s\+$domain" /etc/hosts; then
     echo "127.0.0.1 $domain" | sudo tee -a /etc/hosts >/dev/null
     echo "➕ Added $domain to /etc/hosts"
   else
     echo "✅ $domain already in /etc/hosts"
   fi
-
 }
-
-# add more helpers below …
