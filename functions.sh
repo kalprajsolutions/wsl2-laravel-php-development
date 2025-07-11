@@ -66,9 +66,9 @@ EOL"
     fi
 
     # Ensure PHP‑FPM pool runs as the current user
-    # local pool_conf="/etc/php/${ver}/fpm/pool.d/www.conf"
-    # local current_user; current_user=$(id -un)
-    # local current_group; current_group=$(id -gn)
+    local pool_conf="/etc/php/${ver}/fpm/pool.d/www.conf"
+    local current_user; current_user=$(id -un)
+    local current_group; current_group=$(id -gn)
     # sudo sed -i "s/^user = .*/user = $current_user/" "$pool_conf"
     # sudo sed -i "s/^group = .*/group = $current_group/" "$pool_conf"
 
