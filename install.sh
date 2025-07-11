@@ -4,6 +4,21 @@
 
 set -euo pipefail
 
+shopt -s expand_aliases
+
+# 1. Install prerequisites and add the PPA
+echo "Installing prerequisites and adding Ondřej Surý’s PPA…"
+apt update
+DEBIAN_FRONTEND=noninteractive apt install -y \
+    software-properties-common \
+    ca-certificates \
+    lsb-release \
+    apt-transport-https
+
+add-apt-repository -y ppa:ondrej/php
+apt update
+
+
 ### Configuration #############################################################
 PKG_DIR="${HOME}/.local/lib/wsl2-php-toolkit"         # where helpers live
 RC_FILE="${HOME}/.bashrc"                             # change to ~/.zshrc if needed
