@@ -55,9 +55,9 @@ The toolkit gives you two commands:
 Run the one‑liner (no `sudo`—the script uses it internally where needed):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main/install-php-toolkit.sh | bash
 # – or –
-wget -qO- https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/kalprajsolutions/wsl2-laravel-php-development/main/install-php-toolkit.sh | bash
 ```
 
 > **What it does**
