@@ -107,3 +107,8 @@ If nginx gives 404 cause of permissions issues run below comamnd and restart
 ```bash
 sudo usermod -a -G $USER www-data
 ```
+
+Update Laravel Installer after switching phpversion
+```
+composer global update laravel/installer
+```
