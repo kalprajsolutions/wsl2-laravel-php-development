@@ -180,18 +180,22 @@ server {
 }
 EOF
 
-  fix_laravel_permissions
+  if [[ "$IS_WSL" == false ]]; then
+    fix_laravel_permissions
+  fi
 
   # now enable & reload
   sudo ln -sf /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/$domain
   sudo nginx -s reload || true
   echo "🌐 http://$domain ⇢ $root"
 
-  # add to hosts if needed
-  if ! grep -q "127.0.0.1\s\+$domain" /etc/hosts; then
-    echo "127.0.0.1 $domain" | sudo tee -a /etc/hosts >/dev/null
-    echo "➕ Added $domain to /etc/hosts"
-  else
-    echo "✅ $domain already in /etc/hosts"
+  if [[ "$IS_WSL" == false ]]; then
+    # add to hosts if needed
+    if ! grep -q "127.0.0.1\s\+$domain" /etc/hosts; then
+      echo "127.0.0.1 $domain" | sudo tee -a /etc/hosts >/dev/null
+      echo "➕ Added $domain to /etc/hosts"
+    else
+      echo "✅ $domain already in /etc/hosts"
+    fi
   fi
 }
