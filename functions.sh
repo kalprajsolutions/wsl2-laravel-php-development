@@ -100,12 +100,14 @@ unserve() {
   sudo nginx -s reload || true
   echo "🗑️  Removed $domain"
 
-    # Remove domain from /etc/hosts if present
-  if grep -q "127.0.0.1\s\+$domain" /etc/hosts; then
-    sudo sed -i.bak "/127.0.0.1\s\+$domain/d" /etc/hosts
-    echo "➖ Removed $domain from /etc/hosts"
-  else
-    echo "ℹ️  $domain was not present in /etc/hosts"
+  if [[ "$IS_WSL" == false ]]; then
+      # Remove domain from /etc/hosts if present
+    if grep -q "127.0.0.1\s\+$domain" /etc/hosts; then
+      sudo sed -i.bak "/127.0.0.1\s\+$domain/d" /etc/hosts
+      echo "➖ Removed $domain from /etc/hosts"
+    else
+      echo "ℹ️  $domain was not present in /etc/hosts"
+    fi
   fi
 
 }
